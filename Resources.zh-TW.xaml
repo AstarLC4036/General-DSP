@@ -21,7 +21,7 @@
 	<system:String x:Key="MainWindow_ModulationLabel">調製</system:String>
 	<system:String x:Key="MainWindow_OriginModuLabel">原始</system:String>
 	<system:String x:Key="MainWindow_AMLabel">AM</system:String>
-	<system:String x:Key="MainWindow_AMFastLabel">AM快速</system:String>
+	<system:String x:Key="MainWindow_AMFastLabel">AM(快速)</system:String>
 
 	<system:String x:Key="MainWindow_ModeTitle">模式</system:String>
 	<system:String x:Key="MainWindow_ModeWaveLabel">波形</system:String>
