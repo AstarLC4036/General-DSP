@@ -24,11 +24,19 @@ namespace DSP_General
     /// </summary>
     public partial class MainWindow : Window
     {
+        private static MainWindow instance;
+        public static MainWindow Instance
+        {
+            get
+            {
+                return instance;
+            }
+        }
         public SpectrumGraphicDrawer drawer;
         public DSPMain dsp;
 
-        public const int sWidth = 734;//625
-        public const int sHeight = 487;//387
+        public static int sWidth = 734;//625
+        public static int sHeight = 487;//387
 
         public WasapiLoopbackCapture capture = new WasapiLoopbackCapture();
 
@@ -37,8 +45,11 @@ namespace DSP_General
         #pragma warning disable CS8618
         public MainWindow()
         {
+            instance = this;
+
             InitializeComponent();
             InitSpectrumDrawer();
+            InitSettings();
         }
         #pragma warning restore CS8618
 
@@ -54,13 +65,19 @@ namespace DSP_General
 
         private void InitSpectrumDrawer()
         {
+            this.SizeChanged += OnWindowSizeChange;
             //const int width = 2080;
             //const int height = 1000;
-            spectrumDisplay.Width = sWidth;
-            spectrumDisplay.Height = sHeight;
 
             drawer = new SpectrumGraphicDrawer(sWidth, sHeight, this);
             dsp = new DSPMain(drawer, this);
+        }
+
+        private void InitSettings()
+        {
+            languageBox.ItemsSource = Settings.languages;
+            languageBox.SelectedIndex = Settings.languageIndex;
+            Settings.ApplyLanguageSettings();
         }
 
         private async void LoadWav(object sender, RoutedEventArgs e)
@@ -103,11 +120,26 @@ namespace DSP_General
             }
         }
 
+        private void OnWindowSizeChange(object sender, SizeChangedEventArgs arg)
+        {
+            int w = (int)spectrum.ActualWidth;
+            int h = (int)spectrum.ActualHeight;
+
+            if(w > 0 && h > 0)
+            {
+                sWidth = w;
+                sHeight = h;
+                spectrumDisplay.Width = sWidth;
+                spectrumDisplay.Height = sHeight;
+            }
+        }
+
 #pragma warning disable CS8629
         private void SwitchListenStatus(object sender, RoutedEventArgs e)
         {
             if((bool)listenAudio.IsChecked)
             {
+                drawer.OnSizeChange();
                 dsp.StartCapture();
             }
             else
@@ -183,6 +215,24 @@ namespace DSP_General
             else
             {
                 dsp.SaveAPTImage();
+            }
+        }
+
+        private void languageBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            Settings.languageIndex = languageBox.SelectedIndex;
+        }
+
+        private void SettingsApplyBtn_Click(object sender, RoutedEventArgs e)
+        {
+            Settings.ApplySettings();
+        }
+
+        private void appTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (appTabs.SelectedIndex == 2)
+            {
+                languageBox.SelectedIndex = Settings.languageIndex; //It not works
             }
         }
 #pragma warning restore CS8629

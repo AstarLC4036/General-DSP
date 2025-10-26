@@ -7,25 +7,25 @@
         mc:Ignorable="d"
         Title="General DSP" Height="550" Width="1000">
     <Grid>
-        <TabControl>
-            <TabItem Header="播放">
+        <TabControl Name="appTabs" SelectionChanged="appTabs_SelectionChanged">
+            <TabItem Header="{DynamicResource MainWindow_TabAudioPlay}" d:Header="播放">
                 <Grid Background="#FFE5E5E5">
-                    <GroupBox Header="音频播放器" Margin="10,10,10,10" Height="140" Width="320" HorizontalAlignment="Left" VerticalAlignment="Top">
+                    <GroupBox Header="{DynamicResource MainWindow_AudioPlayTitle}" d:Header="音频播放器" Margin="10,10,10,10" Height="140" Width="320" HorizontalAlignment="Left" VerticalAlignment="Top">
                         <Grid>
-                            <Button Content="选择文件" HorizontalAlignment="Left" VerticalAlignment="Top" Click="SelectWavFile" Margin="248,10,0,0" Grid.Column="1"/>
-                            <TextBox Name="wavPathInput" HorizontalAlignment="Left" TextWrapping="NoWrap" Text="" VerticalAlignment="Top" Height="19" Width="185" Margin="58,10,0,0" Grid.Column="1"/>
-                            <Label Content="音频文件" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,7,0,0" Grid.ColumnSpan="2"/>
-                            <Button Click="LoadWav" Content="加载" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="272,88,0,0" Grid.Column="1"/>
-                            <Button Click="PlayAudio" Content="播放" Margin="10,89,270,10"/>
-                            <Button Click="PauseAudio" Content="暂停" Margin="43,89,237,10"/>
-                            <Button Click="StopAudio" Content="重载" Margin="75,89,205,10"/>
-                            <Label Content="进度" Margin="0,37,0,34"/>
+                            <Button Content="{DynamicResource MainWindow_SelectFileBtn}" d:Content="选择文件" HorizontalAlignment="Left" VerticalAlignment="Top" Click="SelectWavFile" Margin="248,10,0,0" Grid.Column="1"/>
+                            <TextBox Name="wavPathInput" HorizontalAlignment="Left" TextWrapping="NoWrap" Text="" VerticalAlignment="Top" Height="19" Width="170" Margin="70,10,0,0" Grid.Column="1"/>
+                            <Label Content="{DynamicResource MainWindow_AudoFileLabel}" d:Content="音频文件" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,7,0,0" Grid.ColumnSpan="2"/>
+                            <Button Click="LoadWav" Content="{DynamicResource MainWindow_AudioLoadBtn}" d:Content="加载" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="50" Height="18" Margin="0,0,5,5" Grid.Column="1"/>
+                            <Button Click="PlayAudio" Content="{DynamicResource MainWindow_AudioLoadBtn}" d:Content="播放" Width="50" Height="18" Margin="5,0,0,5" HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
+                            <Button Click="PauseAudio" Content="{DynamicResource MainWindow_AudioStopBtn}" d:Content="暂停" Width="50" Height="18" Margin="60,0,0,5" HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
+                            <Button Click="StopAudio" Content="{DynamicResource MainWindow_AudioReloadBtn}" d:Content="重载" Width="50" Height="18" Margin="115,0,0,5" HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
+                            <Label Content="{DynamicResource MainWindow_AudioLoadBtn}" d:Content="进度" Margin="0,37,0,34"/>
                             <Slider Name="audioProgress" Margin="5,59,5,35" Maximum="1" Minimum="0" IsEnabled="False"/>
                         </Grid>
                     </GroupBox>
                 </Grid>
             </TabItem>
-            <TabItem Header="分析">
+            <TabItem Header="{DynamicResource MainWindow_TabAnalyze}" d:Header="分析">
                 <Grid Background="#FFE5E5E5">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="635*"/>
@@ -39,31 +39,49 @@
                             <RowDefinition Height="200"/>
                             <RowDefinition Height="300*"/>
                         </Grid.RowDefinitions>
-                        <GroupBox Header="操作" Margin="10,10,10,0" Grid.Row="0">
+                        <GroupBox Header="{DynamicResource MainWindow_AnalyzeOperationTitle}" d:Header="操作" Margin="10,10,10,0" Grid.Row="0">
                             <StackPanel>
                                 <!-- <Label Content="监听系统音频" FontSize="10.5"/> -->
-                                <CheckBox Click="SwitchListenStatus" Content="监听系统音频" Name="listenAudio"/>
-                                <CheckBox Click="SwitchAPTModeClick" Name="aptMode" Content="APT模式"/>
-                                <Label Name="timerLabel" Content="(APT Analyze)" Margin="0,0,0,0"/>
+                                <CheckBox Click="SwitchListenStatus" Content="{DynamicResource MainWindow_UseSystemAudioLabel}" d:Content="监听系统音频" Name="listenAudio"/>
+                                <CheckBox Click="SwitchAPTModeClick" Name="aptMode" Content="{DynamicResource MainWindow_AptModeLabel}" d:Content="APT模式"/>
+                                <Label Name="timerLabel" Content="- (Run APT Mode to use APT Analyze) -" Margin="0,0,0,0" Opacity="0.7"/>
                             </StackPanel>
                         </GroupBox>
-                        <GroupBox Header="处理" Margin="10,0,10,10" Grid.Row="1">
+                        <GroupBox Header="{DynamicResource MainWindow_ProcessingTitle}" d:Header="处理" Margin="10,0,10,10" Grid.Row="1">
                             <Grid HorizontalAlignment="Left" VerticalAlignment="Top">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="100"/>
                                     <RowDefinition Height="100*"/>
                                 </Grid.RowDefinitions>
-                                <Label Content="调制" Grid.Row="0"/>
-                                <CheckBox Click="NoModulationClick" Name="noModulationBox" Content="原始" Grid.Row="0" Margin="0,25,0,0" IsChecked="True"/>
-                                <CheckBox Click="AMClick" Name="amBox" Content="AM" Grid.Row="0" Margin="0,40,0,0"/>
-                                <CheckBox Click="AptAmClick" Name="aptAmBox" Content="APT AM" Grid.Row="0" Margin="0,55,0,0"/>
-                                <Label Content="模式" Height="100" Width="100" Grid.Row="1"/>
-                                <CheckBox Click="WaveBoxClick" Name="waveBox" Content="波形" Grid.Row="1" Margin="0,25,0,0" IsChecked="True"/>
-                                <CheckBox Click="FFTBoxClick" Name="fftBox" Content="FFT" Grid.Row="1" Margin="0,40,0,0"/>
-                                <CheckBox Click="APTBoxClick" Name="aptBox" Content="APT" Grid.Row="1" Margin="0,55,0,0"/>
+                                <Label Content="{DynamicResource MainWindow_ModulationLabel}" d:Content="调制" Grid.Row="0"/>
+                                <CheckBox Click="NoModulationClick" Name="noModulationBox" Content="{DynamicResource MainWindow_OriginModuLabel}" d:Content="原始" Grid.Row="0" Margin="0,25,0,0" IsChecked="True"/>
+                                <CheckBox Click="AMClick" Name="amBox" Content="{DynamicResource MainWindow_AMLabel}" d:Content="AM" Grid.Row="0" Margin="0,40,0,0"/>
+                                <CheckBox Click="AptAmClick" Name="aptAmBox" Content="{DynamicResource MainWindow_AMFastLabel}" d:Content="AM(快速)" Grid.Row="0" Margin="0,55,0,0"/>
+                                <Label Content="{DynamicResource MainWindow_ModeTitle}" d:Content="模式" Height="100" Width="100" Grid.Row="1"/>
+                                <CheckBox Click="WaveBoxClick" Name="waveBox" Content="{DynamicResource MainWindow_ModeWaveLabel}" d:Content="波形" Grid.Row="1" Margin="0,25,0,0" IsChecked="True"/>
+                                <CheckBox Click="FFTBoxClick" Name="fftBox" Content="{DynamicResource MainWindow_ModeFFTLabel}" d:Content="FFT" Grid.Row="1" Margin="0,40,0,0"/>
+                                <CheckBox Click="APTBoxClick" Name="aptBox" Content="{DynamicResource MainWindow_ModeAPTLabel}" d:Content="APT" Grid.Row="1" Margin="0,55,0,0"/>
                             </Grid>
                         </GroupBox>
                     </Grid>
+                </Grid>
+            </TabItem>
+            <TabItem Header="{DynamicResource MainWindow_TabSettings}" d:Header="设置">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="200"/>
+                        <ColumnDefinition Width="200*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="100"/>
+                        <RowDefinition Height="100*"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Orientation="Horizontal" Margin="10,10,0,0" Grid.Row="0" Grid.Column="0">
+                        <Label Content="{DynamicResource MainWindow_LanguageLabel}" d:Content="语言"/>
+                        <ComboBox Name="languageBox" SelectionChanged="languageBox_SelectionChanged" HorizontalAlignment="Left" Margin="0,0,0,0" VerticalAlignment="Top" Width="120" SelectedIndex="0">
+                        </ComboBox>
+                    </StackPanel>
+                    <Button Name="SettingsApplyBtn" Click="SettingsApplyBtn_Click" Content="{DynamicResource MainWindow_ApplySettingsBtn}" d:Content="应用" Margin="0,0,10,10" Width="50" Height="20" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
                 </Grid>
             </TabItem>
         </TabControl>

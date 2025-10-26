@@ -4,7 +4,10 @@ using NAudio.Wave;
 using NWaves.Operations;
 using NWaves.Signals;
 using NWaves.Transforms;
+using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Drawing;
+using System.IO;
 using System.Timers;
 using System.Windows.Markup;
 using Bitmap = System.Drawing.Bitmap;
@@ -17,22 +20,22 @@ using MessageBoxIcon = System.Windows.Forms.MessageBoxIcon;
 using Pens = System.Drawing.Pens;
 using Point = System.Drawing.Point;
 
-public enum DSPMode
-{
-    Wave,
-    FFT,
-    APT
-}
-
-public enum DSPModulation
-{
-    None,
-    AM,
-    APT_AM
-}
-
 namespace DSP_General
 {
+    public enum DSPMode
+    {
+        Wave,
+        FFT,
+        APT
+    }
+
+    public enum DSPModulation
+    {
+        None,
+        AM,
+        APT_AM
+    }
+
     /// <summary>
     /// 数字信号处理
     /// </summary>
@@ -48,12 +51,25 @@ namespace DSP_General
         //Visualizer
         private SpectrumGraphicDrawer drawer;
         private Point[] points;
-
+        private Font font = new Font("Arial", 8);
+        private SolidBrush brush = new SolidBrush(Color.Black);
         //Signal process
+        /*Main*/
         private float[] inputSignal;
         public DSPMode mode = DSPMode.Wave;
         public DSPModulation modulation = DSPModulation.None;
         public bool enableDemodulateAPT = false;
+        /*FFT Spectrum*/
+        public Fft fft;
+        public RealFft rFft;
+        float[] fftRe;
+        float[] fftIm;
+        public const int FFT_SIZE = 8192;
+        public const int FFT_POS = 100;
+        public const int FFT_RANGE = 550;
+        public const float FFT_SAMPLE2FREQ = 23.4f;
+        public List<double[]> fftDataset = new List<double[]>();
+        public Bitmap spectrumCacheBitmap;
 
         //AM Demodulation
         private HilbertTransform hilbertTransform = new HilbertTransform(1024);
@@ -92,7 +108,7 @@ namespace DSP_General
         private float syncV = 1000;
         private List<APTPixelData> syncPixelBuffer = new List<APTPixelData>();
         private float[] remainedSample;
-        private Queue<APTPixelData> syncHeads = new Queue<APTPixelData>();
+        private ConcurrentQueue<float[]> sampleHandleQueue = new ConcurrentQueue<float[]>();
 
         APTPixelData syncPixel;
 
@@ -117,6 +133,10 @@ namespace DSP_General
             mainWindow = window;
             this.drawer = drawer;
 
+            fft = new Fft(FFT_SIZE);
+            rFft = new RealFft(FFT_SIZE);
+            spectrumCacheBitmap = new Bitmap(550, 1);
+
             InitAnalyzer();
         }
 
@@ -125,20 +145,21 @@ namespace DSP_General
         /// </summary>
         /// <param name="samples">原始采样</param>
         /// <param name="sender">捕获事件的sender</param>
-        private void ProcessSamples(float[] samples, object sender)
+        private void ProcessSamples(float[] samples, int sampleRate)
         {
             //APT 调制解调
             if (enableDemodulateAPT)
             {
                 //因为对于零长度数组之类的输入采样会导致报错,所以使用try
-                //try
+                try
                 {
                     stopwatch.Start();
 
-                    int oriSampleRate = ((WasapiLoopbackCapture)sender).WaveFormat.SampleRate;
+                    int oriSampleRate = sampleRate;
 
                     //重采样到APT_SAMPLE_RATE Resample sample rate to APT_SAMPLE_RATE value.
-                    DiscreteSignal signal = new DiscreteSignal(oriSampleRate, FastDemodulateAptAm(samples, APT_CARRIER_FREQ, oriSampleRate), true);
+                    //DiscreteSignal signal = new DiscreteSignal(oriSampleRate, FastDemodulateAptAm(samples, APT_CARRIER_FREQ, oriSampleRate), true);
+                    DiscreteSignal signal = new DiscreteSignal(oriSampleRate, DemodulateAM(samples), true);
                     float[] resampledSignal = resampler.Resample(signal, APT_SAMPLE_RATE * APT_SR_MULTIPLE).Samples;
                     //斜度修正 Slope correction.
                     float[] aptSamples = new float[resampledSignal.Length + APT_SLOPE_FIX + remainedSample.Length];
@@ -152,19 +173,19 @@ namespace DSP_General
                         Array.Copy(resampledSignal, 0, aptSamples, 0, resampledSignal.Length);
                     }
 
-                        //斜度修复像素点修正 Pixel color correection of slope correction
-                        for (int i = 0; i < APT_SLOPE_FIX; i++)
-                        {
-                            aptSamples[^(i + 1)] = resampledSignal[^APT_PIXEL_INDEX];
-                        }
+                    ////斜度修复像素点修正 Pixel color correection of slope correction
+                    //for (int i = 0; i < APT_SLOPE_FIX; i++)
+                    //{
+                    //    aptSamples[^(i + 1)] = resampledSignal[^APT_PIXEL_INDEX];
+                    //}
 
-                    //采样区头尾像素修正 Start & end part pixel color corrention of samples
-                    for (int i = 0; i < APT_PIXEL_MERGE; i++)
-                    {
-                        aptSamples[i] = aptSamples[APT_PIXEL_MERGE + APT_PIXEL_INDEX];
-                        aptSamples[i+1] = aptSamples[APT_PIXEL_MERGE + APT_PIXEL_INDEX];
-                        //aptSamples[^(i + 1)] = aptSamples[^(APT_PIXEL_MERGE + APT_PIXEL_INDEX)];
-                    }
+                    ////采样区头尾像素修正 Start & end part pixel color corrention of samples
+                    //for (int i = 0; i < APT_PIXEL_MERGE; i++)
+                    //{
+                    //    aptSamples[i] = aptSamples[APT_PIXEL_MERGE + APT_PIXEL_INDEX];
+                    //    aptSamples[i+1] = aptSamples[APT_PIXEL_MERGE + APT_PIXEL_INDEX];
+                    //    //aptSamples[^(i + 1)] = aptSamples[^(APT_PIXEL_MERGE + APT_PIXEL_INDEX)];
+                    //}
 
                     //获取输入信号最大最小值及差值 Get max, min and delta value of input signal.
                     for (int i = 0; i < aptSamples.Length; i++)
@@ -213,7 +234,7 @@ namespace DSP_General
                                     avgSample += aptSamples[i + j];
                                 }
                             }
-                            if(sumTimes != 0)
+                            if (sumTimes != 0)
                                 avgSample /= sumTimes;
 
                             //灰度计算 Calcucate grayscale
@@ -273,7 +294,6 @@ namespace DSP_General
                             }
                         }
 
-                        //DEBUG
                         if (syncPixel.x <= APT_WIDTH && syncPixel.y <= 1000)
                         {
                             aptImage.SetPixel(syncPixel.x, syncPixel.y, Color.FromArgb(0, 255, 0));
@@ -320,7 +340,7 @@ namespace DSP_General
                     bitmapPixelIndex += aptSamples.Length / APT_PIXEL_MERGE;
 
                     //更新分析器 Update analyzer
-                    if(updateSamplesCount)
+                    if (updateSamplesCount)
                     {
                         updateSamplesCount = false;
                         measuredSamples = totalSamples;
@@ -329,18 +349,20 @@ namespace DSP_General
 
                     stopwatch.Stop();
                     totalSamples += aptSamples.Length;
-                    mainWindow.Dispatcher.Invoke(() => { mainWindow.timerLabel.Content = 
+                    mainWindow.Dispatcher.Invoke(() =>
+                    {
+                        mainWindow.timerLabel.Content =
                         $"Process time(ms): {stopwatch.ElapsedMilliseconds}\n" +
                         $"Sample size: {aptSamples.Length} ({(float)aptSamples.Length / APT_PIXEL_MERGE / APT_WIDTH}% line)\n" +
                         $"Pixel pos:(x:{bitmapPixelIndex % APT_WIDTH}, y: {bitmapPixelIndex / APT_WIDTH})\n" +
                         $"--- 1s Analyze ---\n" +
-                        $"Total samples: {measuredSamples} ({measuredSamples / APT_PIXEL_MERGE / APT_WIDTH} lines)\n"+
+                        $"Total samples: {measuredSamples} ({measuredSamples / APT_PIXEL_MERGE / APT_WIDTH} lines)\n" +
                         $"--- Sync Analyze ---\n" +
-                        $"Sync point:({syncPixel.x}, {syncPixel.y})"; 
+                        $"Sync point:({syncPixel.x}, {syncPixel.y})";
                     });
                     stopwatch.Reset();
                 }
-                //catch(Exception)
+                catch(Exception)
                 {
                     //...
                 }
@@ -388,7 +410,7 @@ namespace DSP_General
                         .ToArray();
 
                     points = averageSamples
-                        .Select((v, i) => new Point((int)(i * ((float)MainWindow.sWidth / averageSamples.Length)), drawer.Height / 2 - (int)(v * 100)))
+                        .Select((v, i) => new Point((int)(i * ((float)MainWindow.sWidth / averageSamples.Length)), MainWindow.sHeight / 2 - (int)(v * 100)))
                         .ToArray();   // 将数据转换为坐标点
 
                     drawer.Draw((graphics) =>
@@ -398,32 +420,91 @@ namespace DSP_General
                     break;
 
                 case DSPMode.FFT:
-                    int log = (int)Math.Ceiling(Math.Log(inputSignal.Length, 2));
-                    float[] filledSamples = new float[(int)Math.Pow(2, log)];
-                    Array.Copy(inputSignal, filledSamples, inputSignal.Length);
+                    //int log = (int)Math.Ceiling(Math.Log(inputSignal.Length, 2));
+                    //float[] filledSamples = new float[(int)Math.Pow(2, log)];
+                    //Array.Copy(inputSignal, filledSamples, inputSignal.Length);
 
-                    int sampleRate = (sender as WasapiLoopbackCapture).WaveFormat.SampleRate;
-                    Complex[] complexSrc = filledSamples.Select((v, i) =>
+                    //Complex[] complexSrc = filledSamples.Select((v, i) =>
+                    //{
+                    //    double deg = i / (double)sampleRate * Math.PI * 2;
+                    //    return new Complex()
+                    //    {
+                    //        X = (float)(Math.Cos(deg) * v),
+                    //        Y = (float)(Math.Sin(deg) * v)
+                    //    };
+                    //}).ToArray();
+
+                    //FastFourierTransform.FFT(false, log, complexSrc);
+                    //double[] result = complexSrc.Select(v => Math.Sqrt(v.X * v.X + v.Y * v.Y)).ToArray();
+                    //double[] actualProcess = result;
+
+                    //points = actualProcess
+                    //    .Select((v, i) => new Point((int)(i * ((float)MainWindow.sWidth / actualProcess.Length)), MainWindow.sHeight - (int)(v * 1) - 10))
+                    //    .ToArray();   // 将数据转换为一个个的坐标点
+
+                    //drawer.Draw((graphics) =>
+                    //{
+                    //    graphics.DrawLines(Pens.Black, points);   // 连接这些点, 画线
+                    //    for (int i = 0; i < actualProcess.Length; i += 100)
+                    //    {
+                    //        if (i < actualProcess.Length - 1)
+                    //        {
+                    //            int xPos = (int)(i * ((float)MainWindow.sWidth / actualProcess.Length));
+                    //            graphics.DrawLine(Pens.Black, new Point(xPos, MainWindow.sHeight), new Point(xPos, MainWindow.sHeight - 5));
+                    //        }
+                    //    }
+
+                    //});
+
+                    if (inputSignal.Length > 0 && inputSignal.Length > FFT_SIZE)
                     {
-                        double deg = i / (double)sampleRate * Math.PI * 2;
-                        return new Complex()
+                        fftIm = new float[FFT_SIZE];
+                        fftRe = new float[FFT_SIZE];
+                        rFft.Direct(inputSignal, fftRe, fftIm);
+                        double[] result = fftIm.Select((v, i) => Math.Sqrt(v * v + fftRe[i] * fftRe[i])).ToArray();
+                        //fft.Direct(inputSignal[0..Math.Min(FFT_SIZE, inputSignal.Length)], fftIm);
+                        //double[] result = fftIm.Select((v, i) => Math.Sqrt(v * v + inputSignal[i] * inputSignal[i])).ToArray();
+                        double[] actualProcess = result[0..FFT_RANGE];
+                        if(fftDataset.Count - 1 >= FFT_POS)
                         {
-                            X = (float)(Math.Cos(deg) * v),
-                            Y = (float)(Math.Sin(deg) * v)
-                        };
-                    }).ToArray();
+                            fftDataset.RemoveAt(0);
+                        }
+                        fftDataset.Add(actualProcess);
 
-                    FastFourierTransform.FFT(false, log, complexSrc);
-                    double[] result = complexSrc.Select(v => Math.Sqrt(v.X * v.X + v.Y * v.Y)).ToArray();
+                        points = actualProcess
+                            .Select((v, i) => new Point((int)(i * ((float)MainWindow.sWidth / actualProcess.Length)), MainWindow.sHeight - (int)(v * 2) - FFT_POS))
+                            .ToArray();   // 将数据转换为一个个的坐标点
 
-                    points = result
-                        .Select((v, i) => new Point(i, drawer.Height - (int)(v * 1) - 10))
-                        .ToArray();   // 将数据转换为一个个的坐标点
+                        drawer.Draw((graphics) =>
+                        {
+                            graphics.DrawLines(Pens.Black, points);   // 连接这些点, 画线
 
-                    drawer.Draw((graphics) =>
-                    {
-                        graphics.DrawLines(Pens.Black, points);   // 连接这些点, 画线
-                    });
+                            //GUI
+                            graphics.DrawString($"RealFFT[{FFT_SIZE}](Visualizing index range: 0 - 550)\nInput Signal[{inputSignal.Length}]\nOutput RealFFT[{result.Length}]", font, brush, new Point(5, 5));
+                            graphics.DrawLine(Pens.Black, new Point(0, MainWindow.sHeight - FFT_POS), new Point(MainWindow.sWidth, MainWindow.sHeight - FFT_POS));
+                            for (int i = 0; i < fftDataset.Count; i++)
+                            {
+                                double[] data = fftDataset[^(i+1)];
+                                for (int j = 0; j < data.Length; j++)
+                                {
+                                    int value = (int)Math.Clamp(data[j] * 5, 0, 255);
+                                    spectrumCacheBitmap.SetPixel(j, 0, Color.FromArgb(value, 0, 255 / 4));
+                                }
+                                graphics.DrawImage(spectrumCacheBitmap, 0, MainWindow.sHeight - (FFT_POS - 20) + i, MainWindow.sWidth, 1);
+                            }
+
+                            for (int i = 0; i < actualProcess.Length; i += 100)
+                            {
+                                if (i < actualProcess.Length - 1)
+                                {
+                                    int xPos = (int)(i * ((float)MainWindow.sWidth / actualProcess.Length));
+                                    graphics.DrawLine(Pens.Black, new Point(xPos, MainWindow.sHeight - FFT_POS + 5), new Point(xPos, MainWindow.sHeight - FFT_POS));
+                                    graphics.DrawString($"{i*FFT_SAMPLE2FREQ}Hz", font, brush, new Point(xPos, MainWindow.sHeight - FFT_POS + 5));
+                                }
+                            }
+
+                        });
+                    }
 
                     break;
 
@@ -542,6 +623,7 @@ namespace DSP_General
 
             syncPixelBuffer.Clear();
             remainedSample = Array.Empty<float>();
+            sampleHandleQueue.Clear();
         }
         
         /// <summary>
@@ -549,7 +631,9 @@ namespace DSP_General
         /// </summary>
         public void SaveAPTImage()
         {
-            SaveAPTImage("C://Users/AstarLC/Desktop/apt_img.png");
+            string aptPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\apt-output";
+            Directory.CreateDirectory(aptPath);
+            SaveAPTImage(@$"{aptPath}\apt_img.png");
         }
 
         /// <summary>
@@ -574,7 +658,7 @@ namespace DSP_General
                 .Select(i => BitConverter.ToSingle(e.Buffer, i * 4))
                 .ToArray();
 
-                ProcessSamples(samples, sender);
+                ProcessSamples(samples, ((WasapiLoopbackCapture)sender).WaveFormat.SampleRate);
             };
             //aptSampleBuffer = new float[capture.WaveFormat.SampleRate / 2];
         }

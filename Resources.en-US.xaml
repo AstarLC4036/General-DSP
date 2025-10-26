@@ -1,0 +1,33 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:system="clr-namespace:System;assembly=netstandard">
+    <system:String x:Key="MainWindow_TabAudioPlay" >Audio</system:String>
+    <system:String x:Key="MainWindow_TabAnalyze">Analyze</system:String>
+    <system:String x:Key="MainWindow_TabSettings">Settings</system:String>
+
+	<system:String x:Key="MainWindow_AudioPlayTitle">Audio Player</system:String>
+	<system:String x:Key="MainWindow_AudoFileLabel">Audio File</system:String>
+    <system:String x:Key="MainWindow_SelectFileBtn">Select File</system:String>
+    <system:String x:Key="MainWindow_AudioProgressLabel">Progress</system:String>
+    <system:String x:Key="MainWindow_AudioPlayBtn">Play</system:String>
+    <system:String x:Key="MainWindow_AudioStopBtn">Pause</system:String>
+    <system:String x:Key="MainWindow_AudioReloadBtn">Reload</system:String>
+    <system:String x:Key="MainWindow_AudioLoadBtn">Load</system:String>
+
+    <system:String x:Key="MainWindow_AnalyzeOperationTitle">Operate</system:String>
+    <system:String x:Key="MainWindow_UseSystemAudioLabel">Use System Sudio</system:String>
+	<system:String x:Key="MainWindow_AptModeLabel">APT Mode</system:String>
+
+	<system:String x:Key="MainWindow_ProcessingTitle">Processing</system:String>
+	<system:String x:Key="MainWindow_ModulationLabel">Modulation</system:String>
+	<system:String x:Key="MainWindow_OriginModuLabel">Origin</system:String>
+	<system:String x:Key="MainWindow_AMLabel">AM</system:String>
+	<system:String x:Key="MainWindow_AMFastLabel">AM(Fast)</system:String>
+
+	<system:String x:Key="MainWindow_ModeTitle">Mode</system:String>
+    <system:String x:Key="MainWindow_ModeWaveLabel">Wave</system:String>
+	<system:String x:Key="MainWindow_ModeFFTLabel">FFT</system:String>
+	<system:String x:Key="MainWindow_ModeAPTLabel">APT</system:String>
+
+    <system:String x:Key="MainWindow_LanguageLabel">Language</system:String>
+    <system:String x:Key="MainWindow_ApplySettingsBtn">Apply</system:String>
+</ResourceDictionary>
