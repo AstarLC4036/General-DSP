@@ -17,6 +17,8 @@ namespace DSP_General
             "English",
             "简体中文",
             //"BD3RMM"
+            "繁体中文",
+            //"BG2GSX"
         };
 
         public static int languageIndex = 0; //English as the default language
@@ -36,6 +38,9 @@ namespace DSP_General
                     break;
                 case "English":
                     LanguageManager.CurrentLanguage = new ResourceDictionary { Source = new Uri("Resources.en-US.xaml", UriKind.Relative) };
+                    break;
+                case "繁体中文":
+                    LanguageManager.CurrentLanguage = new ResourceDictionary { Source = new Uri("Resources.zh-TW.xaml", UriKind.Relative) };
                     break;
             }
         }
