@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DSP_Test
+namespace DSP_General
 {
     public struct APTPixelData
     {

@@ -7,7 +7,7 @@ using System.Windows;
 using System.Globalization;
 using System;
 
-namespace General_DSP
+namespace DSP_General
 {
     public static class LanguageManager
     {

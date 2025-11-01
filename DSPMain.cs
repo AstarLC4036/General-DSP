@@ -1,15 +1,14 @@
-﻿using DSP_Test;
-using NAudio.Dsp;
+﻿using NAudio.Dsp;
 using NAudio.Wave;
 using NWaves.Operations;
 using NWaves.Signals;
 using NWaves.Transforms;
+using NWaves.Utils;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Timers;
-using System.Windows.Markup;
 using Bitmap = System.Drawing.Bitmap;
 using Color = System.Drawing.Color;
 using Complex = NAudio.Dsp.Complex;
@@ -33,7 +32,8 @@ namespace DSP_General
     {
         None,
         AM,
-        APT_AM
+        APT_AM,
+        FM
     }
 
     /// <summary>
@@ -144,7 +144,7 @@ namespace DSP_General
         /// 处理采样
         /// </summary>
         /// <param name="samples">原始采样</param>
-        /// <param name="sender">捕获事件的sender</param>
+        /// <param name="sampleRate">采样率</param>
         private void ProcessSamples(float[] samples, int sampleRate)
         {
             //APT 调制解调
@@ -386,6 +386,18 @@ namespace DSP_General
                     float[] demodulatedSignalAPT = FastDemodulateAptAm(samples, APT_CARRIER_FREQ, capture.WaveFormat.SampleRate);
                     inputSignal = demodulatedSignalAPT;
                     break;
+
+                case DSPModulation.FM:
+                    try
+                    {
+                        float[] demodulatedSignalFM = DemodulateFM(samples, sampleRate);
+                        inputSignal = demodulatedSignalFM;
+                    }
+                    catch
+                    {
+
+                    }
+                    break;
             }
 
             //分析模式
@@ -560,7 +572,7 @@ namespace DSP_General
         /// </summary>
         /// <param name="samples">输入采样</param>
         /// <returns>解调后采样</returns>
-        public float[] DemodulateAM(float[] samples)
+        public float[] DemodulateAM(float[] samples, float dcDecrease = 0)
         {
             float[] demodulatedSignalAM = new float[samples.Length];
             ComplexDiscreteSignal complexSignal;
@@ -576,7 +588,7 @@ namespace DSP_General
                 {
                     double re = complexSignal.Real[j];
                     double im = complexSignal.Imag[j];
-                    demodulatedSignalArr[j] = (float)Math.Sqrt(re * re + im * im);
+                    demodulatedSignalArr[j] = (float)Math.Sqrt(re * re + im * im) - dcDecrease;
                 }
                 //合并
                 if (i != 0)
@@ -593,6 +605,24 @@ namespace DSP_General
             //}
 
             //return demodulatedSignalAM.Select(v => v - averageDC).ToArray();
+        }
+
+        public float[] DemodulateFM(float[] samples, int sampleRate)
+        {
+            //float[] imSignal = HelibertTrans(samples);
+            //float[] phase = ModulatePhase(samples, imSignal);
+            //float[] demodFm = new float[phase.Length];
+            //for(int i = 0; i < demodFm.Length - 1; i++)
+            //{
+            //    demodFm[i] = (phase[i + 1] - phase[i]);
+            //}
+            //demodFm[^1] = 0;
+            //return imSignal;
+
+            float[] array = new float[samples.Length];
+            MathUtils.Diff(samples, array);
+            float[] magnitude = DemodulateAM(array, 0); //你可能看不懂这是啥玩意
+            return  magnitude;
         }
         #endregion
 

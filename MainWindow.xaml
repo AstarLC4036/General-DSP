@@ -57,6 +57,7 @@
                                 <CheckBox Click="NoModulationClick" Name="noModulationBox" Content="{DynamicResource MainWindow_OriginModuLabel}" d:Content="原始" Grid.Row="0" Margin="0,25,0,0" IsChecked="True"/>
                                 <CheckBox Click="AMClick" Name="amBox" Content="{DynamicResource MainWindow_AMLabel}" d:Content="AM" Grid.Row="0" Margin="0,40,0,0"/>
                                 <CheckBox Click="AptAmClick" Name="aptAmBox" Content="{DynamicResource MainWindow_AMFastLabel}" d:Content="AM(快速)" Grid.Row="0" Margin="0,55,0,0"/>
+                                <CheckBox Click="FmClick" Name="fmBox" Content="{DynamicResource MainWindow_FMLabel}" d:Content="FM" Grid.Row="0" Margin="0,70,0,0"/>
                                 <Label Content="{DynamicResource MainWindow_ModeTitle}" d:Content="模式" Height="100" Width="100" Grid.Row="1"/>
                                 <CheckBox Click="WaveBoxClick" Name="waveBox" Content="{DynamicResource MainWindow_ModeWaveLabel}" d:Content="波形" Grid.Row="1" Margin="0,25,0,0" IsChecked="True"/>
                                 <CheckBox Click="FFTBoxClick" Name="fftBox" Content="{DynamicResource MainWindow_ModeFFTLabel}" d:Content="FFT" Grid.Row="1" Margin="0,40,0,0"/>

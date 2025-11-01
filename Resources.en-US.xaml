@@ -22,6 +22,7 @@
 	<system:String x:Key="MainWindow_OriginModuLabel">Origin</system:String>
 	<system:String x:Key="MainWindow_AMLabel">AM</system:String>
 	<system:String x:Key="MainWindow_AMFastLabel">AM(Fast)</system:String>
+    <system:String x:Key="MainWindow_FMLabel">FM</system:String>
 
 	<system:String x:Key="MainWindow_ModeTitle">Mode</system:String>
     <system:String x:Key="MainWindow_ModeWaveLabel">Wave</system:String>

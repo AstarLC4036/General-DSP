@@ -197,11 +197,19 @@ namespace DSP_General
             dsp.modulation = DSPModulation.APT_AM;
         }
 
+        private void FmClick(object sender, RoutedEventArgs e)
+        {
+            ModulationCancelAll();
+            fmBox.IsChecked = true;
+            dsp.modulation = DSPModulation.FM;
+        }
+
         private void ModulationCancelAll()
         {
             noModulationBox.IsChecked = false;
             amBox.IsChecked = false;
             aptAmBox.IsChecked = false;
+            fmBox.IsChecked = false;
         }
 
         private void SwitchAPTModeClick(object sender, RoutedEventArgs e)
